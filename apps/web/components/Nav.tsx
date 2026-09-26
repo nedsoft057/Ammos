@@ -1,37 +1,31 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { WalletConnect } from "./WalletConnect";
+import { useWallet } from "./WalletProvider";
 
 const links = [
-  ["/", "Command"],
-  ["/terminal", "Terminal"],
-  ["/strategies", "Strategies"],
-  ["/risk", "Risk"],
-  ["/memory", "Memory"],
-];
+  ["/", "Command", "⌂"], ["/positions", "Live Position", "◈"], ["/strategies", "Strategy Lab", "⌁"], ["/performance", "Performance", "◒"], ["/decisions", "Decisions", "◇"], ["/risk", "Risk", "△"], ["/memory", "Memory", "◫"], ["/terminal", "Terminal", ">_"], ["/settings", "Settings", "⚙"],
+] as const;
 
 export function Nav() {
-  return (
-    <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-60 border-r border-[#242932] bg-[#08090b]/95 p-6 flex-col z-20">
-      <Link href="/" className="mb-12">
-        <div className="font-black tracking-[-.08em] text-2xl">AMMOS<span className="text-[#d9ff65]">.</span></div>
-        <div className="kicker mt-1">Autonomous DeFi intelligence</div>
-      </Link>
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const { address } = useWallet();
+  const home = pathname === "/";
+  const nav = <>
+    <Link href="/" className="brand" onClick={() => setOpen(false)}><div className="brand-mark">A</div><div><div className="font-black tracking-[-.08em] text-xl">AMMOS<span className="text-[#9b8cff]">.</span></div><div className="kicker mt-1">Autonomous DeFi intelligence</div></div></Link>
+    <div className="px-2 mt-1 mb-3"><div className="kicker">Workspace</div></div>
+    <nav className="space-y-1">{links.map(([href, label, icon]) => { const active = href === "/" ? pathname === "/" : pathname.startsWith(href); return <Link key={href} href={href} onClick={() => setOpen(false)} className={`nav-link ${active ? "nav-link-active" : ""}`}><span className="nav-icon">{icon}</span><span>{label}</span></Link>; })}</nav>
+    <div className="mt-auto panel p-4"><div className="kicker">System</div><div className="flex items-center gap-2 mt-3 text-sm"><span className="status-dot"/> Live</div><div className="text-[10px] text-[#72798a] mt-2">live data · wallet-signed execution</div>{address && <div className="text-[9px] text-[#72798a] mt-3 truncate">wallet · {address}</div>}</div>
+  </>;
 
-      <nav className="space-y-2">
-        {links.map(([href, label]) => (
-          <Link key={href} href={href} className="block rounded-lg px-3 py-2.5 text-sm text-[#858c98] hover:bg-white/[.035] hover:text-white transition">
-            {label}
-          </Link>
-        ))}
-      </nav>
+  if (home) return <>
+    <header className="home-nav"><Link href="/" className="home-brand"><div className="brand-mark">A</div><span>AMMOS<span className="text-[#a99cff]">.</span></span></Link><nav><a href="#system">Intelligence</a><a href="#command">Command</a><Link href="/strategies">Strategies</Link><Link href="/terminal">Terminal</Link></nav><div className="home-nav-actions"><Link href="/settings">System</Link><WalletConnect /><Link href="/positions" className="home-enter">Enter AMMOS <span>↗</span></Link></div></header>
+    <header className="mobile-topbar"><Link href="/" className="flex items-center gap-2"><div className="brand-mark small">A</div><span className="font-black tracking-[-.07em]">AMMOS<span className="text-[#9b8cff]">.</span></span></Link><div className="mobile-topbar-actions"><WalletConnect compact /><button className="hamburger" aria-label="Open navigation" onClick={() => setOpen(true)}><span/><span/><span/></button></div></header>{open && <div className="mobile-overlay" onClick={() => setOpen(false)}><aside className="mobile-drawer" onClick={e => e.stopPropagation()}>{nav}</aside></div>}
+  </>;
 
-      <div className="mt-auto panel p-4">
-        <div className="kicker">Agent status</div>
-        <div className="flex items-center gap-2 mt-3 text-sm">
-          <span className="h-2 w-2 rounded-full bg-[#d9ff65] shadow-[0_0_12px_#d9ff65]" />
-          Observing
-        </div>
-        <div className="text-[11px] text-[#858c98] mt-2">Simulation mode · no live execution</div>
-      </div>
-    </aside>
-  );
+  return <><aside className="desktop-nav">{nav}</aside><header className="mobile-topbar"><Link href="/" className="flex items-center gap-2"><div className="brand-mark small">A</div><span className="font-black tracking-[-.07em]">AMMOS<span className="text-[#9b8cff]">.</span></span></Link><div className="mobile-topbar-actions"><WalletConnect compact /><button className="hamburger" aria-label="Open navigation" onClick={() => setOpen(true)}><span/><span/><span/></button></div></header>{open && <div className="mobile-overlay" onClick={() => setOpen(false)}><aside className="mobile-drawer" onClick={e => e.stopPropagation()}>{nav}</aside></div>}</>;
 }

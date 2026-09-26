@@ -1,45 +1,32 @@
-# AMMOS
+# AMMOS · Command Center UI
 
-Autonomous Market-Making & Optimization System.
+A polished, mobile-first AMMOS interface for the existing live-data foundation.
 
-AMMOS evaluates DeFi yield, liquidity, lending, borrowing and staking opportunities, simulates strategies under multiple market regimes, applies deterministic risk gates, and produces an explainable agent decision.
+## What changed
 
-## Current build
+- premium dark command-center visual system using purple / blue accents
+- mobile hamburger navigation + full workspace sidebar on desktop
+- clearer agent reasoning surface with Observe → Rank → Gate flow
+- persistent live AI chat panel
+- live observed-liquidity chart driven by the current DeFiLlama feed
+- stronger market cards, hierarchy, spacing, typography and interaction states
+- existing live wallet boundary preserved: no fabricated balances, positions, P&L or executions
+- existing AMMOS routes preserved: Command, Live Position, Strategy Lab, Performance, Decisions, Risk, Memory, Terminal and Settings
 
-This package is a deployable frontend foundation with:
-- Next.js App Router + TypeScript
-- polished AMMOS command-center UI
-- strategy comparison
-- deterministic risk scoring
-- stress-test simulation
-- agent terminal trace
-- portfolio risk view
-- strategy memory view
-- mocked data clearly labeled as simulated
-
-No wallet private keys or live transaction execution are included.
-
-## Run
+## Termux
 
 ```bash
+unzip AMMOS-ui-polished.zip -d ammos-new
+cd ammos-new/apps/web   # only if you placed the zip inside a monorepo
 npm install
+npm run build
 npm run dev
 ```
 
-Build:
+For Android / Termux, the build script intentionally uses Webpack:
 
 ```bash
 npm run build
-npm start
 ```
 
-## Routes
-
-- `/` command center
-- `/terminal` agent reasoning trace
-- `/strategies` opportunity/strategy lab
-- `/strategies/eth-usdc` strategy detail
-- `/risk` portfolio risk
-- `/memory` strategy memory
-
-The simulation layer is deterministic and intentionally separated from the UI so live adapters can be added later.
+which maps to `next build --webpack` because Turbopack native bindings are unavailable on Android ARM64.

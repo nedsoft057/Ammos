@@ -1,0 +1,43 @@
+AMMOS MOTION UI V2 — TERMUX LOAD
+
+This package is designed for the existing AMMOS repo on Android/Termux.
+It keeps the Webpack build workaround because Turbopack native bindings are unavailable on android/arm64.
+
+Run from:
+  ~/Ammos/apps/web
+
+1. Confirm location:
+  pwd
+
+2. Optional but recommended if the repo is clean:
+  git status
+
+3. Extract over the existing web app:
+  unzip -o ~/storage/downloads/AMMOS-motion-ui-v2.zip -d .
+
+4. Remove the old Next build cache:
+  rm -rf .next
+
+5. Install/check dependencies:
+  npm install
+
+6. Verify TypeScript:
+  npx tsc --noEmit
+
+7. Verify lint:
+  npm run lint
+
+8. Production build (Webpack, not Turbopack):
+  npm run build
+
+9. Start the dev server:
+  npm run dev
+
+10. Open on the phone:
+  http://localhost:3000
+
+If localhost refuses to connect, the server is not running. Keep the Termux tab running after `npm run dev` and open localhost:3000 in the phone browser.
+
+Do NOT change the build script back to `next build`. Android/ARM64 requires `next build --webpack` for this project.
+
+The motion system is CSS/SVG based. It does not require Three.js, WebGL, or another runtime dependency.

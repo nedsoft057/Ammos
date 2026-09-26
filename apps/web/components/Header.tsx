@@ -1,8 +1,6 @@
-export function Header({ title, eyebrow }: { title: string; eyebrow: string }) {
-  return (
-    <header className="mb-8">
-      <div className="kicker">{eyebrow}</div>
-      <h1 className="text-3xl md:text-5xl font-semibold tracking-[-.05em] mt-2">{title}</h1>
-    </header>
-  );
+export function Header({ title, eyebrow, action }: { title: string; eyebrow: string; action?: React.ReactNode }) {
+  return <header className="page-hero-header">
+    <div className="page-hero-copy"><div className="kicker">{eyebrow}</div><h1>{title}</h1></div>
+    {action && <div className="relative z-10 shrink-0">{action}</div>}
+  </header>;
 }
