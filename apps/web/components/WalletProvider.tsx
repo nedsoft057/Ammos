@@ -8,7 +8,7 @@ type EthereumProvider = {
   removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
 };
 
-type WalletData = { address: string; ethBalance: string; wethBalance: string; usdcBalance: string };
+type WalletData = { address: string; ethBalance: string; wethBalance: string; usdcBalance: string; aaveV3?: { collateralUsd: string; debtUsd: string; availableBorrowsUsd: string; ltvPct: string; liquidationThresholdPct: string; healthFactor: string } };
 type WalletContextValue = { address: string | null; wallet: WalletData | null; busy: boolean; error: string | null; connect: () => Promise<void>; disconnect: () => void; refresh: () => Promise<void> };
 const WalletContext = createContext<WalletContextValue | null>(null);
 

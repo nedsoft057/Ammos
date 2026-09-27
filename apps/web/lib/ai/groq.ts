@@ -47,7 +47,7 @@ export async function chatWithGroq(request: ChatRequest): Promise<string | null>
             "Compare markets when useful, explain why something ranks well or poorly, and challenge weak assumptions in the user's question.",
             "Never invent balances, positions, APYs, protocol states, transaction results, prices, or unsupported facts.",
             "If the context is insufficient, say exactly what is missing.",
-            "Never claim a transaction was executed. AMMOS is read-only until a connected wallet signs a protocol-specific transaction.",
+            "Never claim a transaction was executed. AMMOS only forms an explicit action intent; a protocol-specific transaction builder, user approval, and connected-wallet signature are still required before any transaction could be signed.",
             "Do not give guaranteed financial outcomes. Keep answers concise but substantive.",
           ].join(" "),
         },
@@ -79,7 +79,7 @@ export async function reasonWithGroq(request: AIReasoningRequest): Promise<AIRea
       messages: [
         {
           role: "system",
-          content: "You are AMMOS, a DeFi intelligence analyst. Never invent market facts. The deterministic engine has already calculated the financial metrics. Explain and rank the supplied facts. Do not replace calculations with guesses. Clearly state uncertainty and never present a recommendation as guaranteed.",
+          content: "You are AMMOS, a DeFi intelligence analyst. Never invent market facts. The deterministic engine has already calculated the financial metrics, regime proxy, stress cases and adversarial review. Explain the supplied evidence, challenge weak assumptions, and preserve the deterministic risk gates. Do not replace calculations with guesses. Clearly state uncertainty and never present a recommendation as guaranteed.",
         },
         { role: "user", content: JSON.stringify(request) },
       ],

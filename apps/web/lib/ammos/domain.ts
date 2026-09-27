@@ -34,6 +34,7 @@ export type LiquidityPoolSnapshot = {
   aprPct: number;
   token0Weight: number;
   token1Weight: number;
+  il7dPct?: number;
 };
 
 export type PositionSnapshot = {
@@ -43,6 +44,8 @@ export type PositionSnapshot = {
   collateralVolatilityPct: number;
   debtVolatilityPct: number;
   liquidationPenaltyPct: number;
+  protocol?: string;
+  market?: string;
 };
 
 export type Opportunity = {
@@ -59,6 +62,38 @@ export type Opportunity = {
   confidence: number;
   reasons: string[];
   warnings: string[];
+  evidence: string[];
+  unknowns: string[];
+};
+
+export type MarketRegime = {
+  label: "NORMAL" | "SIDEWAYS" | "VOLATILE" | "CRASH" | "LIQUIDITY_SHOCK";
+  confidence: number;
+  signals: string[];
+  limitations: string[];
+};
+
+export type StressResult = {
+  scenario: string;
+  shockPct: number;
+  score: number;
+  survives: boolean;
+  consequence: string;
+};
+
+export type ReviewResult = {
+  status: "pass" | "watch" | "reject";
+  objections: string[];
+  invalidationConditions: string[];
+};
+
+export type ActionIntent = {
+  status: "analysis_only" | "awaiting_user_approval" | "ready_for_wallet_signature";
+  kind: "none" | "supply" | "provide_liquidity" | "borrow" | "withdraw";
+  opportunityId?: string;
+  protocol?: string;
+  summary: string;
+  requiresWalletSignature: true;
 };
 
 export type AgentAssessment = {
@@ -74,6 +109,8 @@ export type AgentAssessment = {
 
 export type MarketSnapshot = {
   asOf: string;
+  source?: string;
+  chain?: string;
   lending?: LendingMarketSnapshot[];
   liquidity?: LiquidityPoolSnapshot[];
   positions?: PositionSnapshot[];

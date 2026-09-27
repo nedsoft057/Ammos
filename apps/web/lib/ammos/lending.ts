@@ -71,5 +71,7 @@ export function evaluateLendingMarket(
     confidence,
     reasons,
     warnings,
+    evidence: [`normalized ${market.id}`],
+    unknowns: [],
   };
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useWallet } from "./WalletProvider";
+import { AgentMarkdown } from "./AgentMarkdown";
 
 type Message = { role: "user" | "assistant"; content: string };
 const starters = ["what is AMMOS seeing right now?", "which market deserves attention?", "explain the current risk posture"];
@@ -71,7 +72,7 @@ export function ChatPanel() {
         {messages.map((message, i) => (
           <div key={`${message.role}-${i}`} className={`chat-message ${message.role === "assistant" ? "chat-agent" : "chat-user"}`}>
             <div className="chat-role">{message.role === "assistant" ? "AMMOS" : "YOU"}</div>
-            <p>{message.content}</p>
+            <AgentMarkdown content={message.content} />
           </div>
         ))}
         {messages.length === 1 && (

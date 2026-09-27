@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAddress, type Address } from "viem";
-import { fetchLivePrices, fetchLiveYieldPools } from "@/lib/live/defillama";
-import { readWallet } from "@/lib/live/ethereum";
-import { getMemoryStore } from "@/lib/memory";
+import { buildDecisionTrace } from "@/lib/ammos/decision";
 import { chatWithGroq } from "@/lib/ai/groq";
 
 export const dynamic = "force-dynamic";
@@ -18,84 +16,60 @@ export async function POST(request: Request) {
     ? body.address as Address
     : undefined;
 
-  if (!question) {
-    return NextResponse.json({ ok: false, error: "Ask AMMOS a question." }, { status: 400 });
-  }
+  if (!question) return NextResponse.json({ ok: false, error: "Ask AMMOS a question." }, { status: 400 });
 
   try {
-    const [pools, prices, walletResult, memories] = await Promise.all([
-      fetchLiveYieldPools(),
-      fetchLivePrices(),
-      address
-        ? readWallet(address).catch(() => undefined)
-        : Promise.resolve(undefined),
-      getMemoryStore().recent("agent_run", 5),
-    ]);
-    const wallet = walletResult;
-
-    const ranked = [...pools]
-      .filter((pool) => pool.apy != null)
-      .sort((a, b) => {
-        const score = (p: typeof a) => {
-          const liquidity = p.tvlUsd >= 1e9 ? 88 : p.tvlUsd >= 1e8 ? 76 : p.tvlUsd >= 1e7 ? 61 : 45;
-          return Math.min(96, liquidity + Math.min(Math.max((p.apy ?? 0) * 1.7, 0), 16));
-        };
-        return score(b) - score(a);
-      })
-      .slice(0, 10);
-
-    const context = {
-      asOf: new Date().toISOString(),
-      chain: "Ethereum mainnet",
-      prices,
-      marketCount: pools.length,
-      wallet: wallet
-        ? {
-            address: wallet.address,
-            ethBalance: wallet.ethBalance,
-            wethBalance: wallet.wethBalance,
-            usdcBalance: wallet.usdcBalance,
-          }
-        : null,
-      rankedMarkets: ranked.map((p) => ({
-        project: p.project,
-        chain: p.chain,
-        symbol: p.symbol,
-        tvlUsd: p.tvlUsd,
-        apy: p.apy,
-        apyBase: p.apyBase,
-        apyReward: p.apyReward,
-        stablecoin: p.stablecoin,
-        exposure: p.exposure,
-      })),
-      recentAgentRuns: memories.map((m) => ({
-        key: m.key,
-        createdAt: m.createdAt,
-        assessment: m.payload.assessment,
-      })),
-    };
-
-    const answer = await chatWithGroq({ question, context }).catch(() => null);
+    const trace = await buildDecisionTrace(address, { persist: true });
+    const answer = await chatWithGroq({
+      question,
+      context: {
+        decisionTraceId: trace.id,
+        observedAt: trace.snapshot.asOf,
+        source: trace.snapshot.source,
+        regime: trace.regime,
+        opportunities: trace.opportunities.slice(0, 10),
+        leadReview: trace.opportunities[0] ? trace.review[trace.opportunities[0].id] : null,
+        leadStress: trace.opportunities[0] ? trace.stress[trace.opportunities[0].id] : [],
+        assessment: trace.assessment,
+        action: trace.action,
+        positionRisk: trace.positionRisk ?? null,
+        positionStress: trace.positionStress ?? [],
+        recentMemory: trace.memory.slice(0, 5),
+        wallet: trace.snapshot.wallet ? {
+          address: trace.snapshot.wallet.address,
+          ethBalance: trace.snapshot.wallet.ethBalance,
+          wethBalance: trace.snapshot.wallet.wethBalance,
+          usdcBalance: trace.snapshot.wallet.usdcBalance,
+        } : null,
+      },
+    }).catch(() => null);
 
     if (answer) {
-      return NextResponse.json({ ok: true, answer, source: "groq", context: { asOf: context.asOf, walletConnected: Boolean(wallet) } });
+      return NextResponse.json({ ok: true, answer, source: "groq", trace });
     }
 
-    const lead = ranked[0];
-    const fallback = lead
-      ? `AMMOS is currently observing ${pools.length} Ethereum records. ${lead.project} / ${lead.symbol} leads the live signal with ${lead.apy?.toFixed(2)}% APY and $${lead.tvlUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })} TVL. I can only infer from this snapshot; execution remains wallet-signed.`
-      : "AMMOS is connected to the live feed, but there are no evaluated markets with a usable APY right now.";
+    const { assessment } = trace;
+    const lead = trace.opportunities[0];
+    const review = lead ? trace.review[lead.id] : undefined;
+    const fallback = `**AMMOS decision trace**
 
-    return NextResponse.json({
-      ok: true,
-      answer: fallback,
-      source: "deterministic",
-      context: { asOf: context.asOf, walletConnected: Boolean(wallet) },
-    });
+${assessment.summary}
+
+**Regime:** ${trace.regime.label} (${Math.round(trace.regime.confidence * 100)}% confidence)
+
+**Lead:** ${lead ? `${lead.protocol} / ${lead.title}` : "none"}
+**Opportunity:** ${assessment.opportunityScore}/100
+**Risk:** ${assessment.riskScore}/100
+**Review:** ${review?.status ?? "unreviewed"}
+
+${assessment.reasoning.slice(0, 5).map((line) => `- ${line}`).join("\n")}
+
+**Action boundary:** ${trace.action.summary}
+
+No transaction has been created or executed.`;
+
+    return NextResponse.json({ ok: true, answer: fallback, source: "deterministic", trace });
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Agent unavailable." },
-      { status: 503 },
-    );
+    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : "Agent unavailable." }, { status: 503 });
   }
 }

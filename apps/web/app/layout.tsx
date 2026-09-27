@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body><WalletProvider><Nav /><main className="app-main"><div className="top-status"><span><i className="status-dot" /> Ethereum mainnet</span><span>LIVE DATA PLANE</span></div><div className="page-wrap">{children}</div><ChatPanel /></main></WalletProvider></body></html>;
+  return <html lang="en"><body><WalletProvider><Nav /><main className="app-main"><div className="page-wrap">{children}</div><ChatPanel /></main></WalletProvider></body></html>;
 }

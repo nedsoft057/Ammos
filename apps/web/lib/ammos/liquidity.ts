@@ -75,5 +75,7 @@ export function evaluateLiquidityPool(
     confidence,
     reasons,
     warnings,
+    evidence: [`normalized ${pool.id}`],
+    unknowns: [],
   };
 }

@@ -1,63 +1,34 @@
 import { NextResponse } from "next/server";
-import {
-  buildDeterministicAssessment,
-  discoverOpportunities,
-  type MarketSnapshot,
-} from "@/lib/ammos";
+import { isAddress, type Address } from "viem";
+import { buildDecisionTrace } from "@/lib/ammos/decision";
 import { reasonWithGroq } from "@/lib/ai/groq";
-import { getMemoryStore } from "@/lib/memory";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const snapshot = (await request.json()) as MarketSnapshot;
-
-    if (!snapshot || typeof snapshot !== "object") {
-      return NextResponse.json(
-        { error: "Invalid market snapshot." },
-        { status: 400 },
-      );
-    }
-
-    const opportunities = discoverOpportunities(snapshot);
-    const deterministicAssessment = buildDeterministicAssessment(
-      opportunities,
-      snapshot.positions?.[0],
-    );
-
+    const body = await request.json().catch(() => ({}));
+    const address = typeof body?.address === "string" && isAddress(body.address)
+      ? body.address as Address
+      : undefined;
+    const trace = await buildDecisionTrace(address, { persist: true });
     const ai = await reasonWithGroq({
-      opportunities: opportunities.slice(0, 10),
-      deterministicAssessment,
-    });
-
-    const assessment = ai ?? deterministicAssessment;
-
-    const memory = getMemoryStore();
-    await memory.save({
-      kind: "agent_run",
-      key: `analysis:${snapshot.asOf}`,
-      payload: {
-        snapshot,
-        opportunities,
-        assessment,
-        aiEnabled: Boolean(ai),
-      },
-    });
+      opportunities: trace.opportunities.slice(0, 10),
+      deterministicAssessment: trace.assessment,
+      regime: trace.regime,
+      reviews: trace.review,
+      stress: trace.stress,
+      memory: trace.memory,
+      userQuestion: typeof body?.question === "string" ? body.question : undefined,
+    }).catch(() => null);
 
     return NextResponse.json({
       ok: true,
       source: ai ? "groq" : "deterministic",
-      opportunities,
-      assessment,
+      trace,
+      assessment: ai ? { ...trace.assessment, summary: ai.summary, reasoning: ai.thesis, actions: ai.actions, warnings: ai.caveats } : trace.assessment,
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "AMMOS analysis failed.",
-      },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: error instanceof Error ? error.message : "AMMOS analysis failed." }, { status: 500 });
   }
 }

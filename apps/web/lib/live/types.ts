@@ -7,6 +7,9 @@ export type LiveYieldPool = {
   apy: number | null;
   apyBase: number | null;
   apyReward: number | null;
+  apyMean30d?: number | null;
+  volume24hUsd?: number | null;
+  il7dPct?: number | null;
   stablecoin: boolean;
   exposure: string;
   url?: string;
@@ -18,10 +21,19 @@ export type LiveMarketSnapshot = {
   chain: "Ethereum";
   pools: LiveYieldPool[];
   prices: Record<string, number>;
+  priceChanges24h?: Record<string, number>;
   wallet?: {
     address: string;
     ethBalance: string;
     wethBalance: string;
     usdcBalance: string;
+    aaveV3?: {
+      collateralUsd: string;
+      debtUsd: string;
+      availableBorrowsUsd: string;
+      ltvPct: string;
+      liquidationThresholdPct: string;
+      healthFactor: string;
+    };
   };
 };

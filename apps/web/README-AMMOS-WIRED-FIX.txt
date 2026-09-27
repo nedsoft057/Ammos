@@ -23,3 +23,13 @@ The source package was inspected and modified directly. The container did not ha
   npm run build
 
 No .next or node_modules directory is included in this archive.
+
+
+FINAL UI PASS
+=============
+- Removed the hero live-observation card; the same live data already has a proper home in the command surface, so it no longer competes with the hero on small screens.
+- Centered the landing hero copy and actions across desktop and mobile.
+- Removed the large mobile dead zone by making the hero fit the viewport below the mobile top bar.
+- Kept the cinematic field as background atmosphere only.
+- Wired the connected wallet address into agent chat requests so the agent can reason from verified wallet context when available.
+- Added lightweight markdown rendering for agent responses, including **bold**, inline code, lists, headings and pipe tables.
