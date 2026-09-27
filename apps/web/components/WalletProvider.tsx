@@ -9,7 +9,9 @@ type EthereumProvider = {
 };
 
 type WalletData = { address: string; ethBalance: string; wethBalance: string; usdcBalance: string; aaveV3?: { collateralUsd: string; debtUsd: string; availableBorrowsUsd: string; ltvPct: string; liquidationThresholdPct: string; healthFactor: string } };
+
 type WalletContextValue = { address: string | null; wallet: WalletData | null; busy: boolean; error: string | null; connect: () => Promise<void>; disconnect: () => void; refresh: () => Promise<void> };
+
 const WalletContext = createContext<WalletContextValue | null>(null);
 
 function isValidAddress(value: string | null): value is string { return !!value && /^0x[a-fA-F0-9]{40}$/.test(value); }
@@ -17,6 +19,16 @@ function getEthereum(): EthereumProvider | undefined { return typeof window === 
 function subscribe(callback: () => void) { window.addEventListener("ammos-wallet-change", callback); return () => window.removeEventListener("ammos-wallet-change", callback); }
 function getAddressSnapshot() { if (typeof window === "undefined") return null; const saved = window.localStorage.getItem("ammos:wallet"); return isValidAddress(saved) ? saved : null; }
 function getServerAddressSnapshot() { return null; }
+
+function withTimeout<T>(promise: Promise<T>, ms = 25000): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Wallet did not respond in time. Please try again.")), ms);
+    promise.then(
+      (v) => { clearTimeout(timer); resolve(v); },
+      (e) => { clearTimeout(timer); reject(e); }
+    );
+  });
+}
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {
   const address = useSyncExternalStore(subscribe, getAddressSnapshot, getServerAddressSnapshot);
@@ -105,20 +117,19 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
     setBusy(true);
     try {
-      const chainId = String(await ethereum.request({ method: "eth_chainId" })).toLowerCase();
+      const chainId = String(await withTimeout(ethereum.request({ method: "eth_chainId" }))).toLowerCase();
       if (chainId !== "0x1") {
         try {
-          await ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x1" }] });
+          await withTimeout(ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x1" }] }));
         } catch {
           throw new Error("AMMOS requires Ethereum mainnet. Switch networks in your wallet and try again.");
         }
       }
 
-      const rawAccounts = await ethereum.request({ method: "eth_requestAccounts" });
+      const rawAccounts = await withTimeout(ethereum.request({ method: "eth_requestAccounts" }));
       const accounts = Array.isArray(rawAccounts) ? rawAccounts : [];
       const next = typeof accounts[0] === "string" && isValidAddress(accounts[0]) ? accounts[0] : null;
       if (!next) throw new Error("Wallet returned no valid Ethereum account.");
-
       setAddress(next);
       const response = await fetch(`/api/wallet/${next}`, { cache: "no-store" });
       const payload = await response.json().catch(() => ({}));
