@@ -1,4 +1,4 @@
-import { createPublicClient, formatEther, formatUnits, http, type Address } from "viem";
+import { createPublicClient, formatEther, formatUnits, getAddress, http, type Address } from "viem";
 import { mainnet } from "viem/chains";
 
 const AAVE_POOL_ABI = [
@@ -18,7 +18,7 @@ const ERC20_ABI = [
 
 const AAVE_V3_POOL = "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2" as Address;
 const WETH = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" as Address;
-const USDC = "0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48" as Address;
+const USDC = getAddress("0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48");
 
 function client() {
   const rpc = process.env.ETH_RPC_URL;
